@@ -2,7 +2,7 @@ const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 
 const generateToken = (id) => {
-    return jwt.sign({ id }, 'eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTcxNjg4NDY5NiwiaWF0IjoxNzE2ODg0Njk2fQ', { expiresIn: '1h' });
+    return jwt.sign({ id }, 'your_jwt_secret', { expiresIn: '1h' });
 };
 
 exports.registerUser = async (req, res) => {
@@ -52,5 +52,34 @@ exports.getUserProfile = async (req, res) => {
         });
     } else {
         res.status(404).json({ message: 'User not found' });
+    }
+};
+
+exports.updateUserProfile = async (req, res) => {
+    const { username, email, password } = req.body;
+    try {
+        const user = await User.findById(req.user.id);
+
+        if (user) {
+            user.username = username || user.username;
+            user.email = email || user.email;
+            if (password) {
+                user.password = password;
+            }
+
+            const updatedUser = await user.save();
+
+            res.json({
+                _id: updatedUser._id,
+                username: updatedUser.username,
+                email: updatedUser.email,
+                role: updatedUser.role,
+                token: generateToken(updatedUser._id),
+            });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
     }
 };
